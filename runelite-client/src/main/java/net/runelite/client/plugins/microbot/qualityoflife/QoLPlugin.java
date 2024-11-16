@@ -13,12 +13,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.config.ConfigPlugin;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.qualityoflife.enums.WintertodtActions;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.AutoRunScript;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.CameraScript;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.NeverLogoutScript;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.SpecialAttackScript;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.pouch.PouchOverlay;
-import net.runelite.client.plugins.microbot.qualityoflife.scripts.pouch.PouchScript;
+import net.runelite.client.plugins.microbot.qualityoflife.scripts.*;
 import net.runelite.client.plugins.microbot.qualityoflife.scripts.wintertodt.WintertodtOverlay;
 import net.runelite.client.plugins.microbot.qualityoflife.scripts.wintertodt.WintertodtScript;
 import net.runelite.client.plugins.microbot.util.antiban.FieldUtil;
@@ -86,8 +81,6 @@ public class QoLPlugin extends Plugin {
     @Inject
     WintertodtScript wintertodtScript;
     @Inject
-    PouchScript pouchScript;
-    @Inject
     private QoLConfig config;
     @Inject
     private QoLScript qoLScript;
@@ -100,9 +93,9 @@ public class QoLPlugin extends Plugin {
     @Inject
     private QoLOverlay qoLOverlay;
     @Inject
-    private PouchOverlay pouchOverlay;
-    @Inject
     private WintertodtOverlay wintertodtOverlay;
+    @Inject
+    private CannonScript cannonScript;
 
     @Provides
     QoLConfig provideConfig(ConfigManager configManager) {
@@ -137,13 +130,8 @@ public class QoLPlugin extends Plugin {
     @Override
     protected void startUp() throws AWTException {
         if (overlayManager != null) {
-            overlayManager.add(pouchOverlay);
             overlayManager.add(qoLOverlay);
             overlayManager.add(wintertodtOverlay);
-        }
-        if (config.displayPouchCounter()) {
-            overlayManager.add(pouchOverlay);
-            pouchScript.startUp();
         }
         if (config.useSpecWeapon()) {
             Microbot.getSpecialAttackConfigs().setSpecialAttack(true);
@@ -161,6 +149,7 @@ public class QoLPlugin extends Plugin {
         specialAttackScript.run(config);
         qoLScript.run(config);
         wintertodtScript.run(config);
+        cannonScript.run(config);
         awaitExecutionUntil(() ->Microbot.getClientThread().invokeLater(this::updateUiElements), () -> !SplashScreen.isOpen(), 600);
     }
 
@@ -169,7 +158,7 @@ public class QoLPlugin extends Plugin {
         qoLScript.shutdown();
         autoRunScript.shutdown();
         specialAttackScript.shutdown();
-        overlayManager.remove(pouchOverlay);
+        cannonScript.shutdown();
         overlayManager.remove(qoLOverlay);
         overlayManager.remove(wintertodtOverlay);
     }
@@ -248,7 +237,6 @@ public class QoLPlugin extends Plugin {
 
     @Subscribe
     private void onMenuOptionClicked(MenuOptionClicked event) {
-        pouchScript.onMenuOptionClicked(event);
         MenuEntry menuEntry = event.getMenuEntry();
         if (recordActions) {
             if (Rs2Bank.isOpen() && config.useDoLastBank()) {
@@ -412,13 +400,6 @@ public class QoLPlugin extends Plugin {
                 configManager.setConfiguration("QoL", "quickFletchKindling", true);
             }
         }
-        if (ev.getKey().equals("displayPouchCounter")) {
-            if (ev.getNewValue() == "true") {
-                overlayManager.add(pouchOverlay);
-            } else {
-                overlayManager.remove(pouchOverlay);
-            }
-        }
         if (ev.getKey().equals("useSpecWeapon") || ev.getKey().equals("specWeapon")) {
             if (config.useSpecWeapon()) {
                 Microbot.getSpecialAttackConfigs().setSpecialAttack(true);
@@ -443,12 +424,6 @@ public class QoLPlugin extends Plugin {
             return;
         }
         applySmoothingToAngle(YAW_INDEX);
-    }
-
-    @Subscribe
-    public void onItemContainerChanged(final ItemContainerChanged event)
-    {
-        pouchScript.onItemContainerChanged(event);
     }
 
     private void customLoadoutOnClicked(MenuEntry event, String loadoutName) {

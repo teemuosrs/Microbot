@@ -232,17 +232,6 @@ public interface QoLConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            keyName = "displayPouchCounter",
-            name = "Display pouch counter",
-            description = "Displays a counter above your runecrafting pouches",
-            position = 4,
-            section = upkeepSection
-    )
-    default boolean displayPouchCounter() {
-        return false;
-    }
-
     // boolean to use custom spec weapon
     @ConfigItem(
             keyName = "useSpecWeapon",
@@ -305,6 +294,17 @@ public interface QoLConfig extends Config {
     )
     default int staminaThreshold() {
         return 50;
+    }
+
+    @ConfigItem(
+            keyName = "refillCannopn",
+            name = "Refill cannon",
+            description = "Refill & Repair cannon",
+            position = 10,
+            section = upkeepSection
+    )
+    default boolean refillCannon() {
+        return false;
     }
 
 
